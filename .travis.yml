@@ -1,0 +1,31 @@
+language: go
+group: edge
+
+go:
+  - 1.9.x
+  - tip
+
+env:
+  global:
+    - CGO_ENABLED=0
+
+notifications:
+  email:
+    on_success: change
+    on_failure: always
+
+deploy:
+  - provider: releases
+    skip_cleanup: true
+    api_key:
+      secure: ZY7XZ74ZzAmrOA37qe8mHjLgoAs8ANOsEnUxPxwmUd39cMhFhrIXETQ/0MzHF3xcP9UkyEMbzyGl1CHKNmd9TOUVMJydkNmFXdMcPqrr/woA1kpUcXV2lA7cZgnpHhiJhnirxX530dz888dcGL0HYuTYzF1s2lM09jyx+rFPoP6ewQV5feZ36sGkp0t+CXT+16UwG+lU4CRW8HdlaROb7mTt8UWk/2AogEzMeNdJXuFdMMVLofn3MAF3hdG9e7tAfwROfQcQdGFbR4pp68gbjYdrQnjPSm8RPoQVdZVrqIjTbom7uZik8VYDijvppyymP9nNbkI9RvgSNS8/qYE1o26Rk8Zb3k/j8xR14/F0HP1Q921crf9UoXOCvwh2bE9SNdScAb2X9u734oiJXk3vthOOBtVgI3pno67D//ue8xPe8xtQqzgXBrz/7HA3Fh4mxFOex5NSzb3oIxXFinC1xDRX/4hzmwG8bCCsmt27eXY2Ax+q9W9GwUXVjii5y2JNlMVkXeep5aw6q1EujCE8ioYctXXe/ATIRCmMgZkj5Vj+S7n8sPZ586Iyy8REReo8Vc1Ge5fmCfXdK6gSIaxvQZue+LuOBN0UR3RrFSSXhXkyM5zCkQ1c3ruUNiTk5bKlUCootEemT/+QkSSQNTcS6lQCJKosd7gF+LhHHaoCoys=
+    file:
+      - gbl_darwin_amd64
+      - gbl_linux_386
+      - gbl_linux_amd64
+      - gbl_windows_386.exe
+      - gbl_windows_amd64.exe
+    on:
+      tags: true
+      repo: acgers/go-bilibili-live
+      condition: $TRAVIS_GO_VERSION =~ ^1\.9

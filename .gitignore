@@ -1,0 +1,8 @@
+# Mac
+.DS_Store
+
+# Visual Studio Code
+.vscode/
+
+# bin
+go-bilibili-live
