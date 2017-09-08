@@ -43,4 +43,10 @@ gbl -d=false -r=320 -c="sid=9ciw7iqm; DedeUserID=4535353 省略1000字;"
 ## 从源码安装(需要go1.9+环境)
 ```
 go get github.com/acgers/go-bilibili-live
+cd $GOPATH/src/github.com/acgers/go-bilibili-live
+make && make install
+```
+卸载
+```
+make uninstall
 ```
