@@ -2,4 +2,4 @@
 
 package main
 
-func handlerInterrupt() {}
+func handlerSignal() {}

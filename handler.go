@@ -9,7 +9,7 @@ import (
 	"syscall"
 )
 
-func handlerInterrupt() {
+func handlerSignal() {
 	go func() {
 		signals := make(chan os.Signal)
 		defer close(signals)

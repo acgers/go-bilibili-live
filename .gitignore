@@ -2,7 +2,10 @@
 .DS_Store
 
 # Visual Studio Code
+debug
 .vscode/
+!.vscode/*.json
 
 # bin
+gbl_*
 go-bilibili-live

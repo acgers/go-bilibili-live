@@ -9,6 +9,9 @@ env:
   global:
     - CGO_ENABLED=0
 
+script:
+  - make
+
 notifications:
   email:
     on_success: change
