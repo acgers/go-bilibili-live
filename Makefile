@@ -9,7 +9,18 @@ ARCH_TARGETS ?= 386,amd64
 APP_NAME := gbl
 APP_BIN := $(APP_NAME)_$(shell go env GOOS)_$(shell go env GOARCH)
 
-IS_TAGGED := $(TRAVIS_TAG)
+GIT_TAG := $(TRAVIS_TAG)
+GIT_REV := `git rev-parse --verify --short HEAD`
+REPO := github.com/acgers/go-bilibili-live
+
+ifdef GIT_TAG
+LD_FLAGS = -X '$(REPO)/bilibili.version=$(GIT_TAG)'
+else
+LD_FLAGS = -X '$(REPO)/bilibili.version=dev-`date "+%s"`'
+endif
+
+LD_FLAGS += -X '$(REPO)/bilibili.gitRevision=$(GIT_REV)' \
+						-X '$(REPO)/bilibili.built=`date "+%s"`'
 
 default: prepare build
 
@@ -24,15 +35,15 @@ help:
 
 .PHONY: run
 run:
-	go run bilibili.go
+	go run -ldflags "$(LD_FLAGS)" main.go
 
 .PHONY: debug-run
 debug-run:
-	GODEBUG=gctrace=1,schedtrace=10000,scheddetail=1 go run bilibili.go
+	GODEBUG=gctrace=1,schedtrace=10000,scheddetail=1 go run -ldflags "$(LD_FLAGS)" main.go
 
 .PHONY: binary
 binary: clean vet lint test
-	go build -x -v -i -o $(APP_BIN)
+	go build -x -v -i -ldflags "$(LD_FLAGS)" -o $(APP_BIN)
 	file $(APP_BIN)
 	@echo "Build code success."
 
@@ -50,7 +61,7 @@ uninstall: clean
 release: clean vet lint test
 	CGO_ENABLED=0 goxc -arch="$(ARCH_TARGETS)" -bc="$(OS_TARGETS)" -v -build-verbose="true" \
 	  -tasks-="validate,archive,deb,deb-dev,rmbin,downloads-page" -build-print-commands="true" \
-	  -build-ldflags="-s -w" -o="gbl_{{.Os}}_{{.Arch}}{{.Ext}}"
+	  -build-ldflags="$(LD_FLAGS) -s -w" -o="gbl_{{.Os}}_{{.Arch}}{{.Ext}}"
 	@echo "Release success."
 
 .PHONY: build

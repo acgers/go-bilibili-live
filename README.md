@@ -32,6 +32,9 @@ windows
 
 在环境变量中添加新值
 
+## bilibili live Cookie
+需要切换到html播放器获取，有效期似乎长一些
+
 ## 例子(注意双引号)
 ```
 gbl -d=false -r=320 -c="sid=9ciw7iqm; DedeUserID=4535353 省略1000字;"

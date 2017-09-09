@@ -9,10 +9,6 @@
       "type": "go",
       "request": "launch",
       "mode": "debug",
-      "args": [
-        "-d",
-        "true"
-      ],
       "program": "${workspaceRoot}"
     }
   ]
