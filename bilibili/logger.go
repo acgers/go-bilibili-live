@@ -19,5 +19,5 @@ func initLogger() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	logger = log.New(io.MultiWriter(os.Stdout, logFile), "[gbl]:", log.LstdFlags)
+	logger = log.New(io.MultiWriter(os.Stdout, logFile), "[gbl]: ", log.LstdFlags)
 }

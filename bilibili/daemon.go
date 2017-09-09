@@ -15,8 +15,6 @@ func Daemon() {
 	// 	return
 	// }
 
-	initLogger()
-
 	go func() {
 		signals := make(chan os.Signal, 1)
 		defer close(signals)

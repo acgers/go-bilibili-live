@@ -24,9 +24,25 @@ var (
 
 // ParseFlag parse command args
 func ParseFlag() {
-	var printVersion bool
+	cookie = os.Getenv(envCookie)
+	roomID, _ = strconv.Atoi(os.Getenv(envRoomID))
 
+	var printVersion bool
+	var cmdCookie string
+	var cmdRoomID int
 	flag.BoolVar(&printVersion, "v", false, "-v, print version")
+	flag.BoolVar(&debug, "d", false, "-d=false or -d false, whether show debug log")
+	flag.StringVar(&cmdCookie, "c", cookieDefault,
+		"-c=cookieValue or -c cookieValue, bilibili live cookie value")
+	flag.IntVar(&cmdRoomID, "r", 320, "-r=320 or -r 320, up room id")
+	if cookie == "" {
+		cookie = cmdCookie
+	}
+	if roomID == 0 {
+		roomID = cmdRoomID
+	}
+	flag.Parse()
+
 	if printVersion {
 		buildtime, _ := strconv.ParseInt(built, 0, 64)
 		fmt.Println()
@@ -39,18 +55,7 @@ func ParseFlag() {
 		os.Exit(0)
 	}
 
-	cookie = os.Getenv(envCookie)
-	roomID, _ = strconv.Atoi(os.Getenv(envRoomID))
-
-	flag.BoolVar(&debug, "d", false, "-d=false or -d false, whether show debug log")
-	if cookie == "" {
-		flag.StringVar(&cookie, "c", cookieDefault,
-			"-c=cookieValue or -c cookieValue, bilibili live cookie value")
-	}
-	if roomID == 0 {
-		flag.IntVar(&roomID, "r", 320, "-r=320 or -r 320, up room id")
-	}
-	flag.Parse()
+	initLogger()
 
 	if debug {
 		debugln("cookie:", cookie, "roomId:", roomID)
