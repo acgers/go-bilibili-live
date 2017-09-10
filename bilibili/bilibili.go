@@ -3,7 +3,12 @@ package gbl
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"math"
+	"math/rand"
+	"net/http"
 	"os"
+	"regexp"
 	"runtime"
 	"strconv"
 	"sync"
@@ -17,9 +22,12 @@ var (
 )
 
 var (
-	debug  bool
-	cookie string
-	roomID int
+	debug      bool
+	cookie     string
+	roomID     int
+	roomUID    int
+	upNickName string
+	token      string
 )
 
 // ParseFlag parse command args
@@ -63,16 +71,53 @@ func ParseFlag() {
 }
 
 func loop() {
-	defer recoverFunc()
-
 	infoln("开始挂机...")
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 
-	r := getBilibili(userInfoAPI)
+	rand.Seed(time.Now().UnixNano())
+
+	resp, err := http.Get(liveURL + strconv.Itoa(roomID))
+	if err != nil {
+		panicln(err)
+	}
+	if resp != nil {
+		defer resp.Body.Close()
+	}
+	htmlBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		panicln(err)
+	}
+	roomIDRegexp := regexp.MustCompile(`var ROOMID = (\d+)`)
+	matchs := roomIDRegexp.FindStringSubmatch(string(htmlBody))
+	if debug {
+		debugln(matchs)
+	}
+
+	if len(matchs) != 2 || matchs[1] == "" {
+		panicln("获取房间[", roomID, "]cid失败")
+	}
+
+	roomID, err = strconv.Atoi(matchs[1])
+	if err != nil {
+		panicln(err)
+	}
+
+	tokenRegexp := regexp.MustCompile(`LIVE_LOGIN_DATA=(.{40})`)
+	matchs = tokenRegexp.FindStringSubmatch(cookie)
+	if debug {
+		debugln(matchs)
+	}
+	if len(matchs) != 2 || matchs[1] == "" {
+		errorln("当前Cookie可能不是在live.bilibili.com获取的")
+	} else {
+		token = matchs[1]
+	}
+
+	ret := getBilibili(userInfoAPI)
 	var succeed bool
-	code := r["code"]
+	code := ret["code"]
 	switch code.(type) {
 	case string:
 		succeed = code == "REPONSE_OK"
@@ -80,59 +125,64 @@ func loop() {
 		succeed = code == 0
 	}
 	if !succeed {
-		errorln("挂机失败:", r["msg"])
+		errorln("挂机失败:", ret["msg"])
 		os.Exit(1)
 	}
 
-	go sign()
-	go onlineHeart()
+	sign()
+	onlineHeart()
+	sendOutdatedGift()
 
 	wg.Wait()
 }
 
 func sign() {
 	doSign := func() bool {
+		defer recoverFunc()
 		ret := getBilibili(fmt.Sprintf(dailyGiftAPI, time.Now().UnixNano()/1e6))
 		if ret == nil || ret["code"].(float64) != 0 {
 			errorln("获取每日礼物失败", ret["msg"])
 			return false
 		}
+
 		ret = getBilibili(signAPI)
 		if ret == nil || ret["code"].(float64) != 0 {
 			errorln("签到失败:", ret["msg"])
-			ret = getBilibili(signInfoAPI)
-			if ret != nil {
-				if ret = ret["data"].(map[string]interface{}); ret["status"].(float64) == 1 {
-					infoln("今日已签到成功,", ret["text"], ",", ret["specialText"])
-					return true
-				}
-			}
-			return false
 		}
-		infoln("今日签到成功")
-		return true
+		ret = getBilibili(signInfoAPI)
+		if ret != nil {
+			data := ret["data"].(map[string]interface{})
+			if data["status"].(float64) == 1 {
+				infoln("今天已签到成功,", data["text"], ",", data["specialText"])
+				return true
+			}
+		}
+		return false
 	}
 
-	for {
+	go func() {
 		for {
-			succeed := doSign()
-			if succeed {
-				break
+			for {
+				if succeed := doSign(); succeed {
+					break
+				}
+				errorln("每日签到失败，重试...")
+				time.Sleep(10 * time.Second)
 			}
-			time.Sleep(5 * time.Second)
-		}
 
-		now := time.Now()
-		next := now.Add(24 * time.Hour)
-		next = time.Date(next.Year(), next.Month(), next.Day(), 0, 0, 40, 0, next.Location())
-		infoln("下次签到时间:", next)
-		timer := time.NewTimer(next.Sub(now))
-		<-timer.C
-	}
+			now := time.Now()
+			next := now.Add(24 * time.Hour)
+			next = time.Date(next.Year(), next.Month(), next.Day(), 0, 0, 40, 0, next.Location())
+			infoln("下次签到时间:", next)
+			timer := time.NewTimer(next.Sub(now))
+			<-timer.C
+		}
+	}()
 }
 
 func onlineHeart() {
 	heart := func() {
+		defer recoverFunc()
 		ret := postBilibili(heartAPI, nil)
 		if ret == nil || ret["code"].(float64) != 0 {
 			errorln("心跳检测失败:", ret["msg"])
@@ -140,13 +190,84 @@ func onlineHeart() {
 			infoln("心跳检测成功")
 		}
 	}
-	heart()
-	ticker := time.NewTicker(5 * time.Minute)
-	for {
-		select {
-		case <-ticker.C:
-			updateSettingsFromEnv()
-			go heart()
+
+	go func() {
+		heart()
+		ticker := time.NewTicker(5 * time.Minute)
+		for {
+			select {
+			case <-ticker.C:
+				updateSettingsFromEnv()
+				heart()
+			}
 		}
+	}()
+}
+
+func sendOutdatedGift() {
+	sendGift := func() bool {
+		defer recoverFunc()
+		ret := getBilibili(fmt.Sprintf(playerGiftBagAPI, time.Now().UnixNano()/1e6))
+		if ret == nil || ret["code"].(float64) != 0 {
+			errorln("获取礼物包裹失败", ret["msg"])
+			return false
+		}
+		debugln(ret)
+		datas := ret["data"].([]interface{})
+		for _, data := range datas {
+			gift := data.(map[string]interface{})
+			if gift["expireat"] == "今日" {
+				if roomUID == 0 {
+					ret = getBilibili(fmt.Sprintf(roomInfoAPI, roomID))
+					if ret == nil || ret["code"].(float64) != 0 {
+						errorln("获取房间信息失败", ret["msg"])
+						return false
+					}
+					data := ret["data"].(map[string]interface{})
+					roomUID = int(data["MASTERID"].(float64))
+					upNickName = data["ANCHOR_NICK_NAME"].(string)
+				}
+				body := make(urlValues, 9)
+				body.Set("giftId", strconv.FormatInt(int64(gift["gift_id"].(float64)), 10))
+				body.Set("roomid", strconv.Itoa(roomID))
+				body.Set("ruid", strconv.Itoa(roomUID))
+				body.Set("num", strconv.Itoa(int(gift["gift_num"].(float64))))
+				// test
+				// body.Set("num", strconv.Itoa(1))
+				body.Set("coinType", "silver")
+				body.Set("Bag_id", strconv.FormatInt(int64(gift["id"].(float64)), 10))
+				body.Set("timestamp", strconv.FormatInt(time.Now().UnixNano()/1e6, 10))
+				body.Set("rnd", strconv.Itoa(int(rand.Int31n(math.MaxInt32))))
+				body.Set("token", token)
+				ret = postBilibili(sendGiftAPI, body,
+					header{"Content-Type", "application/x-www-form-urlencoded; charset=UTF-8"})
+				if ret == nil || ret["code"].(float64) != 0 {
+					errorln("赠送礼物失败", ret["msg"])
+					return false
+				}
+				infoln("礼物投喂成功 [to:", upNickName, "count:", gift["gift_num"],
+					"name", gift["gift_name"], "]")
+			}
+		}
+		return true
 	}
+
+	go func() {
+		for {
+			for {
+				if succeed := sendGift(); succeed {
+					break
+				}
+				errorln("赠送过期礼物失败，重试...")
+				time.Sleep(10 * time.Second)
+			}
+
+			now := time.Now()
+			next := now.Add(24 * time.Hour)
+			next = time.Date(next.Year(), next.Month(), next.Day(), 23, 50, 0, 0, next.Location())
+			infoln("下次赠送时间:", next)
+			timer := time.NewTimer(next.Sub(now))
+			<-timer.C
+		}
+	}()
 }

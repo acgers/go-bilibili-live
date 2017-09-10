@@ -2,11 +2,15 @@ package gbl
 
 const (
 	// get
-	signAPI        = "http://api.live.bilibili.com/sign/doSign"
-	signInfoAPI    = "http://live.bilibili.com/sign/GetSignInfo"
-	dailyGiftAPI   = "http://api.live.bilibili.com/giftBag/sendDaily?_=%d"
-	userInfoAPI    = "http://api.live.bilibili.com/User/getUserInfo"
-	currentTaskAPI = "http://live.bilibili.com/FreeSilver/getCurrentTask"
+	liveURL          = "http://live.bilibili.com/"
+	signAPI          = "http://api.live.bilibili.com/sign/doSign"
+	signInfoAPI      = "http://live.bilibili.com/sign/GetSignInfo"
+	userInfoAPI      = "http://api.live.bilibili.com/User/getUserInfo"
+	roomInfoAPI      = "http://live.bilibili.com/live/getInfo?roomid=%d"
+	currentTaskAPI   = "http://live.bilibili.com/FreeSilver/getCurrentTask"
+	dailyGiftAPI     = "http://api.live.bilibili.com/giftBag/sendDaily?_=%d"
+	playerGiftBagAPI = "http://api.live.bilibili.com/gift/playerBag?_=%d"
+	sendGiftAPI      = "http://api.live.bilibili.com/giftBag/send"
 
 	// post
 	heartAPI = "http://api.live.bilibili.com/User/userOnlineHeart"

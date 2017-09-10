@@ -59,7 +59,7 @@ uninstall: clean
 
 .PHONY: release
 release: clean vet lint test
-	CGO_ENABLED=0 goxc -arch="$(ARCH_TARGETS)" -bc="$(OS_TARGETS)" -v -build-verbose="true" \
+	goxc -arch="$(ARCH_TARGETS)" -bc="$(OS_TARGETS)" -v -build-verbose="true" \
 	  -tasks-="validate,archive,deb,deb-dev,rmbin,downloads-page" -build-print-commands="true" \
 	  -build-ldflags="$(LD_FLAGS) -s -w" -o="gbl_{{.Os}}_{{.Arch}}{{.Ext}}"
 	@echo "Release success."

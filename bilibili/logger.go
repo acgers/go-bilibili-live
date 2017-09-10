@@ -21,3 +21,19 @@ func initLogger() {
 	}
 	logger = log.New(io.MultiWriter(os.Stdout, logFile), "[gbl]: ", log.LstdFlags)
 }
+
+func debugln(v ...interface{}) {
+	logger.Println("[debug]", v)
+}
+
+func infoln(v ...interface{}) {
+	logger.Println("[info]", v)
+}
+
+func errorln(v ...interface{}) {
+	logger.Println("[error]", v)
+}
+
+func panicln(v ...interface{}) {
+	logger.Panicln("[panic]", v)
+}
