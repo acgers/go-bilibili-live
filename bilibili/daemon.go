@@ -1,19 +1,26 @@
 package gbl
 
 import (
+	"fmt"
 	"os"
+	"os/exec"
 	"os/signal"
 	rdb "runtime/debug"
+	"strings"
 	"syscall"
 )
 
 // Daemon for background task
 func Daemon() {
-	// if os.Getppid() != 1 {
-	// 	args := append([]string{os.Args[0]}, os.Args[1:]...)
-	// 	os.StartProcess(os.Args[0], args, &os.ProcAttr{Files: []*os.File{os.Stdin, os.Stdout, os.Stderr}})
-	// 	return
-	// }
+	if !(version == "" || strings.Contains(version, "dev")) {
+		if os.Getppid() != 1 {
+			cmd := exec.Command(os.Args[0], os.Args[1:]...)
+			fmt.Println(cmd)
+			cmd.Start()
+			fmt.Printf("%s [PID] %d running...\n", os.Args[0], cmd.Process.Pid)
+			os.Exit(0)
+		}
+	}
 
 	go func() {
 		signals := make(chan os.Signal, 1)

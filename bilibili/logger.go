@@ -9,7 +9,12 @@ import (
 	"time"
 )
 
-var logger *log.Logger
+var (
+	debugln func(v ...interface{})
+	infoln  func(v ...interface{})
+	errorln func(v ...interface{})
+	panicln func(v ...interface{})
+)
 
 func initLogger() {
 	logPath := filepath.Join(os.TempDir(), string(os.PathSeparator),
@@ -19,21 +24,21 @@ func initLogger() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	logger = log.New(io.MultiWriter(os.Stdout, logFile), "[gbl]: ", log.LstdFlags)
-}
+	logger := log.New(io.MultiWriter(os.Stdout, logFile), "[gbl]: ", log.LstdFlags)
 
-func debugln(v ...interface{}) {
-	logger.Println("[debug]", v)
-}
+	debugln = func(v ...interface{}) {
+		logger.Println("[debug]", v)
+	}
 
-func infoln(v ...interface{}) {
-	logger.Println("[info]", v)
-}
+	infoln = func(v ...interface{}) {
+		logger.Println("[info]", v)
+	}
 
-func errorln(v ...interface{}) {
-	logger.Println("[error]", v)
-}
+	errorln = func(v ...interface{}) {
+		logger.Println("[error]", v)
+	}
 
-func panicln(v ...interface{}) {
-	logger.Panicln("[panic]", v)
+	panicln = func(v ...interface{}) {
+		logger.Panicln("[panic]", v)
+	}
 }
