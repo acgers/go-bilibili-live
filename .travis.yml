@@ -9,6 +9,9 @@ env:
   global:
     - CGO_ENABLED=0
 
+install:
+  - go get ./...
+
 script:
   - make
 

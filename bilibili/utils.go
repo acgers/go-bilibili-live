@@ -9,8 +9,11 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
+
+	"gopkg.in/gomail.v2"
 )
 
 type bilibiliResp = map[string]interface{}
@@ -27,6 +30,8 @@ var recoverFunc = func() {
 		errorln(rec)
 	}
 }
+
+var mailClient *gomail.Dialer
 
 func getBilibili(url string, headers ...header) bilibiliResp {
 	req, err := http.NewRequest("GET", url, nil)
@@ -138,4 +143,37 @@ func updateSettingsFromEnv() {
 			roomID = id
 		}
 	}
+}
+
+func checkMailSetting() {
+	if mailClient == nil {
+		if gblMail == "" {
+			panicln("GBL_MAIL flags not set")
+		}
+		if gblPwd == "" {
+			panicln("GBL_MAIL_PWD flags not set")
+		}
+		if gblSMTP == "" {
+			panicln("GBL_MAIL_SMTP flags not set")
+		}
+		mailClient = gomail.NewDialer(gblSMTP, 465, gblMail, gblPwd)
+	}
+}
+
+func sendMail() {
+	message := gomail.NewMessage()
+	message.SetHeader("From", gblMail)
+	message.SetHeader("To", notifyMail)
+	message.SetHeader("Subject", "[GBL] bilibili live 任务运行失败")
+	message.SetBody("text/html; charset=utf-8",
+		fmt.Sprintf("<pre>请更新Cookie,可以更新环境变量[%s]的值</pre>", envCookie))
+	err := mailClient.DialAndSend(message)
+	if err != nil {
+		errorln(err)
+	}
+}
+
+func isEmail(str string) bool {
+	ret, _ := regexp.MatchString(`^[a-z0-9A-Z]+([\-_\.][a-z0-9A-Z]+)*@([a-z0-9A-Z]+(-[a-z0-9A-Z]+)*\.)+[a-zA-Z]+$`, str)
+	return ret
 }

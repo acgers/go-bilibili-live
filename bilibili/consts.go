@@ -11,6 +11,7 @@ const (
 	dailyGiftAPI     = "http://api.live.bilibili.com/giftBag/sendDaily?_=%d"
 	playerGiftBagAPI = "http://api.live.bilibili.com/gift/playerBag?_=%d"
 	sendGiftAPI      = "http://api.live.bilibili.com/giftBag/send"
+	getCaptchaAPI    = "http://live.bilibili.com/freeSilver/getCaptcha?ts=%d"
 
 	// post
 	heartAPI = "http://api.live.bilibili.com/User/userOnlineHeart"

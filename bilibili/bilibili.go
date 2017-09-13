@@ -22,9 +22,16 @@ var (
 )
 
 var (
+	gblMail string
+	gblPwd  string
+	gblSMTP string
+)
+
+var (
 	debug      bool
 	cookie     string
 	roomID     int
+	notifyMail string
 	roomUID    int
 	upNickName string
 	token      string
@@ -36,19 +43,14 @@ func ParseFlag() {
 	roomID, _ = strconv.Atoi(os.Getenv(envRoomID))
 
 	var printVersion bool
-	var cmdCookie string
+	var cmdCookie, cmdNotifyMail string
 	var cmdRoomID int
 	flag.BoolVar(&printVersion, "v", false, "-v, print version")
-	flag.BoolVar(&debug, "d", false, "-d=false or -d false, whether show debug log")
-	flag.StringVar(&cmdCookie, "c", cookieDefault,
-		"-c=cookieValue or -c cookieValue, bilibili live cookie value")
-	flag.IntVar(&cmdRoomID, "r", 320, "-r=320 or -r 320, up room id")
-	if cookie == "" {
-		cookie = cmdCookie
-	}
-	if roomID == 0 {
-		roomID = cmdRoomID
-	}
+	flag.BoolVar(&debug, "d", false, "-d=false, whether show debug log")
+	flag.StringVar(&cmdCookie, "c", cookieDefault, "-c=cookieValue, bilibili live cookie value")
+	flag.IntVar(&cmdRoomID, "r", 320, "-r=320, up room id")
+	flag.StringVar(&cmdNotifyMail, "m", "", "-m=a@b.c, mail for notify")
+
 	flag.Parse()
 
 	if printVersion {
@@ -64,6 +66,21 @@ func ParseFlag() {
 	}
 
 	initLogger()
+
+	if cookie == "" {
+		cookie = cmdCookie
+	}
+	if roomID == 0 {
+		roomID = cmdRoomID
+	}
+
+	if cmdNotifyMail != "" {
+		if !isEmail(cmdNotifyMail) {
+			panicln("非法参数，不是合法的邮件地址")
+		}
+		notifyMail = cmdNotifyMail
+		checkMailSetting()
+	}
 
 	if debug {
 		debugln("cookie:", cookie, "roomId:", roomID)
@@ -130,10 +147,15 @@ func loop() {
 	}
 
 	sign()
-	onlineHeart()
+	userOnlineHeart()
 	sendOutdatedGift()
+	openSilverBox()
 
 	wg.Wait()
+}
+
+func openSilverBox() {
+
 }
 
 func sign() {
@@ -180,8 +202,8 @@ func sign() {
 	}()
 }
 
-func onlineHeart() {
-	heart := func() {
+func userOnlineHeart() {
+	onlineHeart := func() {
 		defer recoverFunc()
 		ret := postBilibili(heartAPI, nil)
 		if ret == nil || ret["code"].(float64) != 0 {
@@ -192,13 +214,13 @@ func onlineHeart() {
 	}
 
 	go func() {
-		heart()
+		onlineHeart()
 		ticker := time.NewTicker(5 * time.Minute)
 		for {
 			select {
 			case <-ticker.C:
 				updateSettingsFromEnv()
-				heart()
+				onlineHeart()
 			}
 		}
 	}()

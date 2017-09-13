@@ -20,7 +20,10 @@ LD_FLAGS = -X '$(REPO)/bilibili.version=dev-`date "+%s"`'
 endif
 
 LD_FLAGS += -X '$(REPO)/bilibili.gitRevision=$(GIT_REV)' \
-						-X '$(REPO)/bilibili.built=`date "+%s"`'
+						-X '$(REPO)/bilibili.built=`date "+%s"`' \
+						-X '$(REPO)/bilibili.gblMail=$(GBL_MAIL)' \
+						-X '$(REPO)/bilibili.gblPwd=$(GBL_MAIL_PWD)' \
+						-X '$(REPO)/bilibili.gblSMTP=$(GBL_MAIL_SMTP)'
 
 default: prepare build
 
@@ -35,11 +38,11 @@ help:
 
 .PHONY: run
 run:
-	go run -ldflags "$(LD_FLAGS)" main.go
+	go run -ldflags "$(LD_FLAGS)" main.go -d=true -m=wangxufire@gmail.com
 
 .PHONY: debug-run
 debug-run:
-	GODEBUG=gctrace=1,schedtrace=10000,scheddetail=1 go run -ldflags "$(LD_FLAGS)" main.go
+	GODEBUG=gctrace=1,schedtrace=10000,scheddetail=1 go run -ldflags "$(LD_FLAGS)" main.go -d=true
 
 .PHONY: binary
 binary: clean vet lint test

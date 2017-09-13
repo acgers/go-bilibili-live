@@ -18,6 +18,8 @@
 
     -r <roomId>                up主直播间的房间号(用于自动投喂即将过期的礼物)
 
+    -m <notifyMail>            接收通知的邮件地址
+
     -v                         打印版本信息
 ```
 
@@ -37,7 +39,7 @@ windows
 
 ## 例子(注意双引号)
 ```
-gbl -d=false -r=320 -c="sid=9ciw7iqm; DedeUserID=4535353 省略1000字;"
+gbl -d=false -r=320 -m="a@b.c" -c="sid=9ciw7iqm; DedeUserID=4535353 省略1000字;"
 ```
 
 ## 下载
